@@ -2,7 +2,6 @@ package frc.robot;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -25,7 +24,7 @@ public class Telemetry {
 
     /**
      * Construct a telemetry object, with the specified max speed of the robot
-     * 
+     *
      * @param maxSpeed Maximum speed in meters per second
      */
     public Telemetry(double maxSpeed) {
@@ -45,9 +44,12 @@ public class Telemetry {
     private final NetworkTable driveStateTable = inst.getTable("DriveState");
     private final StructPublisher<Pose2d> drivePose = driveStateTable.getStructTopic("Pose", Pose2d.struct).publish();
     private final StructPublisher<ChassisSpeeds> driveSpeeds = driveStateTable.getStructTopic("Speeds", ChassisSpeeds.struct).publish();
-    private final StructArrayPublisher<SwerveModuleState> driveModuleStates = driveStateTable.getStructArrayTopic("ModuleStates", SwerveModuleState.struct).publish();
-    private final StructArrayPublisher<SwerveModuleState> driveModuleTargets = driveStateTable.getStructArrayTopic("ModuleTargets", SwerveModuleState.struct).publish();
-    private final StructArrayPublisher<SwerveModulePosition> driveModulePositions = driveStateTable.getStructArrayTopic("ModulePositions", SwerveModulePosition.struct).publish();
+    private final StructArrayPublisher<SwerveModuleState> driveModuleStates = driveStateTable
+        .getStructArrayTopic("ModuleStates", SwerveModuleState.struct).publish();
+    private final StructArrayPublisher<SwerveModuleState> driveModuleTargets = driveStateTable
+        .getStructArrayTopic("ModuleTargets", SwerveModuleState.struct).publish();
+    private final StructArrayPublisher<SwerveModulePosition> driveModulePositions = driveStateTable
+        .getStructArrayTopic("ModulePositions", SwerveModulePosition.struct).publish();
     private final DoublePublisher driveTimestamp = driveStateTable.getDoubleTopic("Timestamp").publish();
     private final DoublePublisher driveOdometryFrequency = driveStateTable.getDoubleTopic("OdometryFrequency").publish();
 
@@ -102,10 +104,10 @@ public class Telemetry {
         m_poseArray[1] = state.Pose.getY();
         m_poseArray[2] = state.Pose.getRotation().getDegrees();
         for (int i = 0; i < 4; ++i) {
-            m_moduleStatesArray[i*2 + 0] = state.ModuleStates[i].angle.getRadians();
-            m_moduleStatesArray[i*2 + 1] = state.ModuleStates[i].speedMetersPerSecond;
-            m_moduleTargetsArray[i*2 + 0] = state.ModuleTargets[i].angle.getRadians();
-            m_moduleTargetsArray[i*2 + 1] = state.ModuleTargets[i].speedMetersPerSecond;
+            m_moduleStatesArray[i * 2 + 0] = state.ModuleStates[i].angle.getRadians();
+            m_moduleStatesArray[i * 2 + 1] = state.ModuleStates[i].speedMetersPerSecond;
+            m_moduleTargetsArray[i * 2 + 0] = state.ModuleTargets[i].angle.getRadians();
+            m_moduleTargetsArray[i * 2 + 1] = state.ModuleTargets[i].speedMetersPerSecond;
         }
 
         SignalLogger.writeDoubleArray("DriveState/Pose", m_poseArray);
