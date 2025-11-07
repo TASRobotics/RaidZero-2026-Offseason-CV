@@ -7,6 +7,10 @@ import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -16,6 +20,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -42,8 +48,16 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization = new SwerveRequest.SysIdSwerveTranslation();
     private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization = new SwerveRequest.SysIdSwerveSteerGains();
     private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
+    private final SwerveRequest.ApplyRobotSpeeds pathplannerSpeeds = new SwerveRequest.ApplyRobotSpeeds();
 
-    /* SysId routine for characterizing translation. This is used to find PID gains for the drive motors. */
+    private final Field2d field = new Field2d();
+
+    private static Swerve system;
+
+    /*
+     * SysId routine for characterizing translation. This is used to find PID gains
+     * for the drive motors.
+     */
     private final SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
         new SysIdRoutine.Config(
             null, // Use default ramp rate (1 V/s)
@@ -59,7 +73,10 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
         )
     );
 
-    /* SysId routine for characterizing steer. This is used to find PID gains for the steer motors. */
+    /*
+     * SysId routine for characterizing steer. This is used to find PID gains for
+     * the steer motors.
+     */
     private final SysIdRoutine m_sysIdRoutineSteer = new SysIdRoutine(
         new SysIdRoutine.Config(
             null, // Use default ramp rate (1 V/s)
@@ -77,8 +94,10 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
     /*
      * SysId routine for characterizing rotation.
-     * This is used to find PID gains for the FieldCentricFacingAngle HeadingController.
-     * See the documentation of SwerveRequest.SysIdSwerveRotation for info on importing the log to SysId.
+     * This is used to find PID gains for the FieldCentricFacingAngle
+     * HeadingController.
+     * See the documentation of SwerveRequest.SysIdSwerveRotation for info on
+     * importing the log to SysId.
      */
     private final SysIdRoutine m_sysIdRoutineRotation = new SysIdRoutine(
         new SysIdRoutine.Config(
@@ -108,15 +127,22 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
      * <p>
-     * This constructs the underlying hardware devices, so users should not construct
-     * the devices themselves. If they need the devices, they can access them through
+     * This constructs the underlying hardware devices, so users should not
+     * construct
+     * the devices themselves. If they need the devices, they can access them
+     * through
      * getters in the classes.
      *
-     * @param drivetrainConstants   Drivetrain-wide constants for the swerve drive
-     * @param modules               Constants for each specific module
+     * @param drivetrainConstants Drivetrain-wide constants for the swerve drive
+     * @param modules             Constants for each specific module
      */
     public Swerve(SwerveDrivetrainConstants drivetrainConstants, SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, modules);
+
+        SmartDashboard.putData("Field", field);
+
+        configureAutoBuilder();
+
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -125,8 +151,10 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
      * <p>
-     * This constructs the underlying hardware devices, so users should not construct
-     * the devices themselves. If they need the devices, they can access them through
+     * This constructs the underlying hardware devices, so users should not
+     * construct
+     * the devices themselves. If they need the devices, they can access them
+     * through
      * getters in the classes.
      *
      * @param drivetrainConstants     Drivetrain-wide constants for the swerve drive
@@ -137,6 +165,11 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
      */
     public Swerve(SwerveDrivetrainConstants drivetrainConstants, double odometryUpdateFrequency, SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, odometryUpdateFrequency, modules);
+
+        SmartDashboard.putData("Field", field);
+
+        configureAutoBuilder();
+
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -145,31 +178,45 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
      * <p>
-     * This constructs the underlying hardware devices, so users should not construct
-     * the devices themselves. If they need the devices, they can access them through
+     * This constructs the underlying hardware devices, so users should not
+     * construct
+     * the devices themselves. If they need the devices, they can access them
+     * through
      * getters in the classes.
      *
-     * @param drivetrainConstants       Drivetrain-wide constants for the swerve drive
+     * @param drivetrainConstants       Drivetrain-wide constants for the swerve
+     *                                  drive
      * @param odometryUpdateFrequency   The frequency to run the odometry loop. If
-     *                                  unspecified or set to 0 Hz, this is 250 Hz on
+     *                                  unspecified or set to 0 Hz, this is 250 Hz
+     *                                  on
      *                                  CAN FD, and 100 Hz on CAN 2.0.
-     * @param odometryStandardDeviation The standard deviation for odometry calculation
-     *                                  in the form [x, y, theta]ᵀ, with units in meters
+     * @param odometryStandardDeviation The standard deviation for odometry
+     *                                  calculation
+     *                                  in the form [x, y, theta]ᵀ, with units in
+     *                                  meters
      *                                  and radians
-     * @param visionStandardDeviation   The standard deviation for vision calculation
-     *                                  in the form [x, y, theta]ᵀ, with units in meters
+     * @param visionStandardDeviation   The standard deviation for vision
+     *                                  calculation
+     *                                  in the form [x, y, theta]ᵀ, with units in
+     *                                  meters
      *                                  and radians
      * @param modules                   Constants for each specific module
      */
     public Swerve(SwerveDrivetrainConstants drivetrainConstants, double odometryUpdateFrequency, Matrix<N3, N1> odometryStandardDeviation, Matrix<N3, N1> visionStandardDeviation, SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, odometryUpdateFrequency, odometryStandardDeviation, visionStandardDeviation, modules);
+
+        SmartDashboard.putData("Field", field);
+
+        configureAutoBuilder();
+
         if (Utils.isSimulation()) {
             startSimThread();
         }
     }
 
     /**
-     * Returns a command that applies the specified control request to this swerve drivetrain.
+     * Returns a command that applies the specified control request to this swerve
+     * drivetrain.
      *
      * @param request Function returning the request to apply
      * @return Command to run
@@ -200,14 +247,32 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
         return m_sysIdRoutineToApply.dynamic(direction);
     }
 
+    /**
+     * Stops the swerve
+     *
+     * @return A {@link Command} to stop the swerve
+     */
+    public Command stop() {
+        return runOnce(
+            () -> this.setControl(
+                new SwerveRequest.RobotCentric().withVelocityX(0.0).withVelocityY(0.0)
+                    .withRotationalRate(0.0)
+            )
+        );
+    }
+
     @Override
     public void periodic() {
         /*
          * Periodically try to apply the operator perspective.
-         * If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
-         * This allows us to correct the perspective in case the robot code restarts mid-match.
-         * Otherwise, only check and apply the operator perspective if the DS is disabled.
-         * This ensures driving behavior doesn't change until an explicit disable event occurs during testing.
+         * If we haven't applied the operator perspective before, then we should apply
+         * it regardless of DS state.
+         * This allows us to correct the perspective in case the robot code restarts
+         * mid-match.
+         * Otherwise, only check and apply the operator perspective if the DS is
+         * disabled.
+         * This ensures driving behavior doesn't change until an explicit disable event
+         * occurs during testing.
          */
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
@@ -235,11 +300,14 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     }
 
     /**
-     * Adds a vision measurement to the Kalman Filter. This will correct the odometry pose estimate
+     * Adds a vision measurement to the Kalman Filter. This will correct the
+     * odometry pose estimate
      * while still accounting for measurement noise.
      *
-     * @param visionRobotPoseMeters The pose of the robot as measured by the vision camera.
-     * @param timestampSeconds The timestamp of the vision measurement in seconds.
+     * @param visionRobotPoseMeters The pose of the robot as measured by the vision
+     *                              camera.
+     * @param timestampSeconds      The timestamp of the vision measurement in
+     *                              seconds.
      */
     @Override
     public void addVisionMeasurement(Pose2d visionRobotPoseMeters, double timestampSeconds) {
@@ -247,20 +315,68 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     }
 
     /**
-     * Adds a vision measurement to the Kalman Filter. This will correct the odometry pose estimate
+     * Adds a vision measurement to the Kalman Filter. This will correct the
+     * odometry pose estimate
      * while still accounting for measurement noise.
      * <p>
      * Note that the vision measurement standard deviations passed into this method
      * will continue to apply to future measurements until a subsequent call to
      * {@link #setVisionMeasurementStdDevs(Matrix)} or this method.
      *
-     * @param visionRobotPoseMeters The pose of the robot as measured by the vision camera.
-     * @param timestampSeconds The timestamp of the vision measurement in seconds.
-     * @param visionMeasurementStdDevs Standard deviations of the vision pose measurement
-     *     in the form [x, y, theta]ᵀ, with units in meters and radians.
+     * @param visionRobotPoseMeters    The pose of the robot as measured by the
+     *                                 vision camera.
+     * @param timestampSeconds         The timestamp of the vision measurement in
+     *                                 seconds.
+     * @param visionMeasurementStdDevs Standard deviations of the vision pose
+     *                                 measurement
+     *                                 in the form [x, y, theta]ᵀ, with units in
+     *                                 meters and radians.
      */
     @Override
     public void addVisionMeasurement(Pose2d visionRobotPoseMeters, double timestampSeconds, Matrix<N3, N1> visionMeasurementStdDevs) {
-        super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds), visionMeasurementStdDevs);
+        super.addVisionMeasurement(
+            visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds),
+            visionMeasurementStdDevs
+        );
+    }
+
+    /**
+     * Configures the AutoBuilder for the Swerve subsystem
+     */
+    private void configureAutoBuilder() {
+        try {
+            AutoBuilder.configure(
+                () -> this.getState().Pose,
+                this::resetPose,
+                () -> this.getState().Speeds,
+                (speeds, feedforwards) -> setControl(
+                    pathplannerSpeeds.withSpeeds(speeds)
+                        .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
+                        .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
+                ),
+                new PPHolonomicDriveController(
+                    new PIDConstants(3.3, 0, 0),
+                    new PIDConstants(3, 0, 0)
+                ),
+                RobotConfig.fromGUISettings(),
+                () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red,
+                this
+            );
+        } catch (Exception e) {
+            DriverStation.reportError("Failed to load PathPlanner config and configure Autobuilder", e.getStackTrace());
+        }
+    }
+
+    /**
+     * Gets the {@link Swerve} subsystem instance
+     *
+     * @return The {@link Swerve} subsystem instance
+     */
+    public static Swerve system() {
+        if (system == null) {
+            system = TunerConstants.createDrivetrain();
+        }
+
+        return system;
     }
 }
