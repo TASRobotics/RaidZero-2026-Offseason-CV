@@ -4,6 +4,7 @@ import com.ctre.phoenix6.Utils;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.Notifier;
@@ -84,7 +85,7 @@ public class Limelight extends SubsystemBase {
          * @param ignoreAll Whether to ignore all measurements
          */
         public void update(boolean ignoreAll) {
-            update(ignoreAll, 0.5, 0.5, 5);
+            update(ignoreAll, 0.5, 0.5, Units.degreesToRadians(5));
         }
 
         /**
@@ -95,14 +96,14 @@ public class Limelight extends SubsystemBase {
          * @param stdevY    The standard deviation in the Y direction in meters
          */
         public void update(boolean ignoreAll, double stdevX, double stdevY) {
-            update(ignoreAll, stdevX, stdevY, 5);
+            update(ignoreAll, stdevX, stdevY, Units.degreesToRadians(5));
         }
 
         /**
          * Updates the limelight state
          * 
          * @param ignoreAll Whether to ignore all measurements
-         * @param stdevRot  The standard deviation for rotations in degrees
+         * @param stdevRot  The standard deviation for rotations in radians
          */
         public void update(boolean ignoreAll, double stdevRot) {
             update(ignoreAll, 0.5, 0.5, stdevRot);
@@ -114,7 +115,7 @@ public class Limelight extends SubsystemBase {
          * @param ignoreAll Whether to ignore all measurements
          * @param stdevX    The standard deviation in the X direction in meters
          * @param stdevY    The standard deviation in the Y direction in meters
-         * @param stdevRot  The standard deviation for rotations in degrees
+         * @param stdevRot  The standard deviation for rotations in radians
          */
         public void update(boolean ignoreAll, double stdevX, double stdevY, double stdevRot) {
             LimelightHelpers.SetRobotOrientation(
@@ -139,7 +140,7 @@ public class Limelight extends SubsystemBase {
                 swerve.addVisionMeasurement(
                         currEstimate.pose,
                         Utils.fpgaToCurrentTime(currEstimate.timestampSeconds),
-                        VecBuilder.fill(0.5, 0.5, 5).div(LimelightHelpers.getTA("limelight-fl")));
+                        VecBuilder.fill(stdevX, stdevY, stdevRot).div(LimelightHelpers.getTA(limelightName)));
             } else {
                 SmartDashboard.putBoolean(limelightName + "Pose", false);
             }
