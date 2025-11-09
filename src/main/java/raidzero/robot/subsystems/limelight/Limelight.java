@@ -140,7 +140,8 @@ public class Limelight extends SubsystemBase {
                 swerve.addVisionMeasurement(
                         currEstimate.pose,
                         Utils.fpgaToCurrentTime(currEstimate.timestampSeconds),
-                        VecBuilder.fill(stdevX, stdevY, stdevRot).div(LimelightHelpers.getTA(limelightName)));
+                        VecBuilder.fill(stdevX, stdevY, stdevRot)
+                                .div(Math.max(LimelightHelpers.getTA(limelightName), 0.05)));
             } else {
                 SmartDashboard.putBoolean(limelightName + "Pose", false);
             }
