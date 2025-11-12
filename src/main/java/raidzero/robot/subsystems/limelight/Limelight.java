@@ -17,8 +17,7 @@ import raidzero.robot.subsystems.swerve.TunerConstants;
 public class Limelight extends SubsystemBase {
     public class LimelightState {
         public enum PIPELINE {
-            TAG,
-            OBJECT,
+            TAG, OBJECT,
         }
 
         private String limelightName;
@@ -30,7 +29,7 @@ public class Limelight extends SubsystemBase {
 
         /**
          * Constructs a LimelightState instance
-         * 
+         *
          * @param limelightName The name of the limelight
          */
         public LimelightState(String limelightName) {
@@ -44,7 +43,7 @@ public class Limelight extends SubsystemBase {
 
         /**
          * Gets the current pose estimate
-         * 
+         *
          * @return The current {@link LimelightHelpers.PoseEstimate}
          */
         public LimelightHelpers.PoseEstimate getEstimate() {
@@ -53,7 +52,7 @@ public class Limelight extends SubsystemBase {
 
         /**
          * Gets the name of the limelight
-         * 
+         *
          * @return The name of the limelight
          */
         public String getName() {
@@ -62,7 +61,7 @@ public class Limelight extends SubsystemBase {
 
         /**
          * Gets the current pipeline
-         * 
+         *
          * @return The current {@link PIPELINE}
          */
         public PIPELINE getPipeline() {
@@ -71,7 +70,7 @@ public class Limelight extends SubsystemBase {
 
         /**
          * Sets the current pipeline
-         * 
+         *
          * @param pipeline The {@link PIPELINE} to set
          */
         public void setPipeline(PIPELINE pipeline) {
@@ -81,7 +80,7 @@ public class Limelight extends SubsystemBase {
 
         /**
          * Updates the limelight state
-         * 
+         *
          * @param ignoreAll Whether to ignore all measurements
          */
         public void update(boolean ignoreAll) {
@@ -90,7 +89,7 @@ public class Limelight extends SubsystemBase {
 
         /**
          * Updates the limelight state
-         * 
+         *
          * @param ignoreAll Whether to ignore all measurements
          * @param stdevX    The standard deviation in the X direction in meters
          * @param stdevY    The standard deviation in the Y direction in meters
@@ -101,7 +100,7 @@ public class Limelight extends SubsystemBase {
 
         /**
          * Updates the limelight state
-         * 
+         *
          * @param ignoreAll Whether to ignore all measurements
          * @param stdevRot  The standard deviation for rotations in radians
          */
@@ -111,7 +110,7 @@ public class Limelight extends SubsystemBase {
 
         /**
          * Updates the limelight state
-         * 
+         *
          * @param ignoreAll Whether to ignore all measurements
          * @param stdevX    The standard deviation in the X direction in meters
          * @param stdevY    The standard deviation in the Y direction in meters
@@ -143,6 +142,8 @@ public class Limelight extends SubsystemBase {
                 }
             }
 
+            SmartDashboard.putBoolean(limelightName + "Pose", !ignore && !ignoreAll);
+
             prevEstimate = currEstimate;
         }
 
@@ -157,8 +158,10 @@ public class Limelight extends SubsystemBase {
                                                     .baseUnitMagnitude())
                     ||
                     (prevEstimate != null && (currEstimate.pose.getTranslation()
-                            .getDistance(prevEstimate.pose
-                                    .getTranslation()) > TunerConstants.kSpeedAt12Volts.baseUnitMagnitude() * 0.02))
+                            .getDistance(
+                                    prevEstimate.pose
+                                            .getTranslation()) > TunerConstants.kSpeedAt12Volts.baseUnitMagnitude()
+                                                    * 0.02))
                     ||
                     (currEstimate.rawFiducials.length > 0 && currEstimate.rawFiducials[0].ambiguity > 0.5 &&
                             currEstimate.rawFiducials[0].distToCamera > 4.0)
