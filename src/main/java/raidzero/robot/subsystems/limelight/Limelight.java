@@ -131,19 +131,16 @@ public class Limelight extends SubsystemBase {
 
             if (currEstimate != null && currEstimate.pose != null) {
                 ignore = checkIgnore();
-            }
 
-            if (!ignoreAll && !ignore) {
-                SmartDashboard.putBoolean(limelightName + "Pose", true);
                 ntPublisher.set(currEstimate.pose);
 
-                swerve.addVisionMeasurement(
-                        currEstimate.pose,
-                        Utils.fpgaToCurrentTime(currEstimate.timestampSeconds),
-                        VecBuilder.fill(stdevX, stdevY, stdevRot)
-                                .div(Math.max(LimelightHelpers.getTA(limelightName), 0.05)));
-            } else {
-                SmartDashboard.putBoolean(limelightName + "Pose", false);
+                if (!ignore && !ignoreAll) {
+                    swerve.addVisionMeasurement(
+                            currEstimate.pose,
+                            Utils.fpgaToCurrentTime(currEstimate.timestampSeconds),
+                            VecBuilder.fill(stdevX, stdevY, stdevRot)
+                                    .div(Math.max(LimelightHelpers.getTA(limelightName), -1)));
+                }
             }
 
             prevEstimate = currEstimate;
