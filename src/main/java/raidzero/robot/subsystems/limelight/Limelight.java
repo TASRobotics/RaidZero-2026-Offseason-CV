@@ -136,7 +136,7 @@ public class Limelight extends SubsystemBase {
                 if (!ignore && !ignoreAll) {
                     swerve.addVisionMeasurement(
                             currEstimate.pose,
-                            Utils.fpgaToCurrentTime(currEstimate.timestampSeconds),
+                            currEstimate.timestampSeconds,
                             VecBuilder.fill(stdevX, stdevY, stdevRot)
                                     .div(Math.max(LimelightHelpers.getTA(limelightName), -1)));
                 }
