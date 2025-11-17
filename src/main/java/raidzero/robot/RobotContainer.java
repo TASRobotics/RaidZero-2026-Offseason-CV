@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import raidzero.robot.subsystems.limelight.Limelight;
 import raidzero.robot.subsystems.swerve.Swerve;
 import raidzero.robot.subsystems.swerve.TunerConstants;
 
@@ -33,6 +34,7 @@ public class RobotContainer {
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     public final Swerve drivetrain = Swerve.system();
+    public final Limelight limes = Limelight.system();
 
     public RobotContainer() {
         configureBindings();
