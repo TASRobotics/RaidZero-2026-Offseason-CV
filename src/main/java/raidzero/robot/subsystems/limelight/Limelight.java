@@ -9,6 +9,7 @@ import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.Map;
 import raidzero.lib.LimelightHelpers;
 import raidzero.robot.subsystems.swerve.Swerve;
 import raidzero.robot.subsystems.swerve.TunerConstants;
@@ -186,6 +187,13 @@ public class Limelight extends SubsystemBase {
     private LimelightState blState = new LimelightState("limelight-bl");
     private LimelightState brState = new LimelightState("limelight-br");
 
+    private Map<String, LimelightState> limelights = Map.of(
+        "limelight-fl", flState,
+        "limelight-fr", frState,
+        "limelight-bl", blState,
+        "limelight-br", brState
+    );
+
     private boolean ignoreAllLimes = false;
 
     private Notifier notifier;
@@ -198,6 +206,14 @@ public class Limelight extends SubsystemBase {
      */
     private Limelight() {
         this.startThread();
+    }
+
+    public void setPipeline(String limelightName, LimelightState.PIPELINE pipeline) {
+        if (!limelights.containsKey(limelightName)) {
+            return;
+        }
+
+        limelights.get(limelightName).setPipeline(pipeline);
     }
 
     /**
