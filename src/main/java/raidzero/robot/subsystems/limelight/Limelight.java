@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -35,8 +36,8 @@ public class Limelight extends SubsystemBase {
         public LimelightState(String limelightName) {
             this.limelightName = limelightName;
             this.ntPublisher = NetworkTableInstance.getDefault()
-                    .getStructTopic(limelightName + "NT", Pose2d.struct)
-                    .publish();
+                .getStructTopic(limelightName + "NT", Pose2d.struct)
+                .publish();
 
             this.ignore = false;
         }
@@ -118,55 +119,54 @@ public class Limelight extends SubsystemBase {
          */
         public void update(boolean ignoreAll, double stdevX, double stdevY, double stdevRot) {
             LimelightHelpers.SetRobotOrientation(
-                    limelightName,
-                    swerve.getState().Pose.getRotation().getDegrees(),
-                    swerve.getPigeon2().getAngularVelocityZWorld().getValueAsDouble(),
-                    0,
-                    0,
-                    0,
-                    0);
+                limelightName,
+                swerve.getPigeon2().getYaw().getValueAsDouble(),
+                swerve.getPigeon2().getAngularVelocityZWorld().getValueAsDouble(),
+                0,
+                0,
+                0,
+                0
+            );
 
             currEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightName);
 
             if (currEstimate != null && currEstimate.pose != null) {
                 ignore = checkIgnore();
 
-                ntPublisher.set(currEstimate.pose);
-
                 if (!ignore && !ignoreAll) {
+                    ntPublisher.set(currEstimate.pose);
+
                     swerve.addVisionMeasurement(
-                            currEstimate.pose,
-                            currEstimate.timestampSeconds,
-                            VecBuilder.fill(stdevX, stdevY, stdevRot)
-                                    .div(Math.max(LimelightHelpers.getTA(limelightName), -1)));
+                        currEstimate.pose,
+                        currEstimate.timestampSeconds,
+                        VecBuilder.fill(stdevX, stdevY, stdevRot)
+                            .div(Math.max(LimelightHelpers.getTA(limelightName), -1))
+                    );
                 }
+
+                prevEstimate = currEstimate;
+            } else {
+                ignore = false;
             }
 
             SmartDashboard.putBoolean(limelightName + "Pose", !ignore && !ignoreAll);
-
-            prevEstimate = currEstimate;
         }
 
         private boolean checkIgnore() {
             return !poseInField(currEstimate.pose) ||
-                    (Math.abs(LimelightHelpers.getBotPose3d_wpiBlue(limelightName).getZ()) > 0.4) ||
-                    (LimelightHelpers.getTA(limelightName) < 0.1) ||
-                    (prevEstimate != null
-                            && (currEstimate.pose.getTranslation().getDistance(prevEstimate.pose.getTranslation()) /
-                                    (currEstimate.timestampSeconds
-                                            - prevEstimate.timestampSeconds)) > TunerConstants.kSpeedAt12Volts
-                                                    .baseUnitMagnitude())
-                    ||
-                    (prevEstimate != null && (currEstimate.pose.getTranslation()
-                            .getDistance(
-                                    prevEstimate.pose
-                                            .getTranslation()) > TunerConstants.kSpeedAt12Volts.baseUnitMagnitude()
-                                                    * 0.02))
-                    ||
-                    (currEstimate.rawFiducials.length > 0 && currEstimate.rawFiducials[0].ambiguity > 0.5 &&
-                            currEstimate.rawFiducials[0].distToCamera > 4.0)
-                    ||
-                    currEstimate.pose.equals(new Pose2d(0, 0, Rotation2d.fromDegrees(0)));
+                (Math.abs(LimelightHelpers.getBotPose3d_wpiBlue(limelightName).getZ()) > 0.4) ||
+                (LimelightHelpers.getTA(limelightName) < 0.1) ||
+                (prevEstimate != null && (currEstimate.pose.getTranslation().getDistance(prevEstimate.pose.getTranslation()) /
+                    (currEstimate.timestampSeconds - prevEstimate.timestampSeconds)) > TunerConstants.kSpeedAt12Volts
+                        .baseUnitMagnitude()) ||
+                (prevEstimate != null && (currEstimate.pose.getTranslation()
+                    .getDistance(
+                        prevEstimate.pose
+                            .getTranslation()
+                    ) > TunerConstants.kSpeedAt12Volts.baseUnitMagnitude() * 0.02)) ||
+                (currEstimate.rawFiducials.length > 0 && currEstimate.rawFiducials[0].ambiguity > 0.5 &&
+                    currEstimate.rawFiducials[0].distToCamera > 4.0) ||
+                currEstimate.pose.equals(new Pose2d(0, 0, Rotation2d.fromDegrees(0)));
         }
 
         /**
@@ -177,9 +177,9 @@ public class Limelight extends SubsystemBase {
          */
         private boolean poseInField(Pose2d pose) {
             return pose.getTranslation().getX() > 0 &&
-                    pose.getTranslation().getX() < 17.55 &&
-                    pose.getTranslation().getY() > 0 &&
-                    pose.getTranslation().getY() < 8.05;
+                pose.getTranslation().getX() < 17.55 &&
+                pose.getTranslation().getY() > 0 &&
+                pose.getTranslation().getY() < 8.05;
         }
     }
 
