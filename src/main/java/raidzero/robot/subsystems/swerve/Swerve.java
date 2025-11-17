@@ -308,6 +308,23 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
         m_simNotifier.startPeriodic(kSimLoopPeriod);
     }
 
+    public Command driveToNearestCoral() {
+        SwerveRequest.ApplyRobotSpeeds request = new SwerveRequest.ApplyRobotSpeeds();
+
+        return Commands.runOnce(() -> {
+            Limelight.system().setPipeline("limelight-br", Limelight.LimelightState.PIPELINE.OBJECT);
+        }).andThen(Commands.run(() -> {
+            this.setControl(
+                    request.withSpeeds(
+                            new ChassisSpeeds(
+                                    1.00, 0.0, LimelightHelpers.getTX("limelight-br") * -0.125)));
+        }).until(() -> {
+            return LimelightHelpers.getTY("limelight-br") < -15 && LimelightHelpers.getTV("limelight-br");
+        }).andThen(() -> {
+            Limelight.system().setPipeline("limelight-br", Limelight.LimelightState.PIPELINE.TAG);
+        }));
+    }
+
     /**
      * Adds a vision measurement to the Kalman Filter. This will correct the
      * odometry pose estimate
