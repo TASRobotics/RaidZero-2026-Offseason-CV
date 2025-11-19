@@ -7,6 +7,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.Map;
@@ -83,8 +84,8 @@ public class Limelight extends SubsystemBase {
          *
          * @param ignoreAll Whether to ignore all measurements
          */
-        public void update(boolean ignoreAll) {
-            update(ignoreAll, 0.5, 0.5, Units.degreesToRadians(5));
+        public void update(boolean ignoreAll, Timer timer) {
+            update(ignoreAll, 0.5, 0.5, Units.degreesToRadians(5), timer);
         }
 
         /**
@@ -94,8 +95,8 @@ public class Limelight extends SubsystemBase {
          * @param stdevX    The standard deviation in the X direction in meters
          * @param stdevY    The standard deviation in the Y direction in meters
          */
-        public void update(boolean ignoreAll, double stdevX, double stdevY) {
-            update(ignoreAll, stdevX, stdevY, Units.degreesToRadians(5));
+        public void update(boolean ignoreAll, double stdevX, double stdevY, Timer timer) {
+            update(ignoreAll, stdevX, stdevY, Units.degreesToRadians(5), timer);
         }
 
         /**
@@ -104,8 +105,8 @@ public class Limelight extends SubsystemBase {
          * @param ignoreAll Whether to ignore all measurements
          * @param stdevRot  The standard deviation for rotations in radians
          */
-        public void update(boolean ignoreAll, double stdevRot) {
-            update(ignoreAll, 0.5, 0.5, stdevRot);
+        public void update(boolean ignoreAll, double stdevRot, Timer timer) {
+            update(ignoreAll, 0.5, 0.5, stdevRot, timer);
         }
 
         /**
@@ -116,18 +117,21 @@ public class Limelight extends SubsystemBase {
          * @param stdevY    The standard deviation in the Y direction in meters
          * @param stdevRot  The standard deviation for rotations in radians
          */
-        public void update(boolean ignoreAll, double stdevX, double stdevY, double stdevRot) {
+        public void update(boolean ignoreAll, double stdevX, double stdevY, double stdevRot, Timer timer) {
             LimelightHelpers.SetRobotOrientation(
-                limelightName,
-                swerve.getPigeon2().getYaw().getValueAsDouble(),
-                swerve.getPigeon2().getAngularVelocityZWorld().getValueAsDouble(),
-                0,
-                0,
-                0,
-                0
-            );
+                    limelightName,
+                    swerve.getPigeon2().getYaw().getValueAsDouble(),
+                    swerve.getPigeon2().getAngularVelocityZWorld().getValueAsDouble(),
+                    0,
+                    0,
+                    0,
+                    0);
 
-            currEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightName);
+            if (Timer.getFPGATimestamp() < 30) {
+                currEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(limelightName);
+            } else {
+                currEstimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(limelightName);
+            }
 
             if (currEstimate != null && currEstimate.pose != null) {
                 ignore = checkIgnore();
@@ -136,11 +140,14 @@ public class Limelight extends SubsystemBase {
                     ntPublisher.set(currEstimate.pose);
 
                     swerve.addVisionMeasurement(
-                        currEstimate.pose,
-                        currEstimate.timestampSeconds,
-                        VecBuilder.fill(stdevX, stdevY, stdevRot)
-                            .div(Math.max(LimelightHelpers.getTA(limelightName), 0.05))
-                    );
+                            currEstimate.pose,
+                            currEstimate.timestampSeconds,
+                            VecBuilder.fill(stdevX, stdevY, stdevRot)
+                                    .div(Math.max(LimelightHelpers.getTA(limelightName), 0.05)));
+
+                    if (timer.hasElapsed(5)) {
+                        swerve.getPigeon2().setYaw(currEstimate.pose.getRotation().getDegrees());
+                    }
                 }
 
                 prevEstimate = currEstimate;
@@ -197,6 +204,7 @@ public class Limelight extends SubsystemBase {
     private boolean ignoreAllLimes = false;
 
     private Notifier notifier;
+    private Timer timer;
 
     private Swerve swerve = Swerve.system();
     private static Limelight instance = null;
@@ -206,6 +214,9 @@ public class Limelight extends SubsystemBase {
      */
     private Limelight() {
         this.startThread();
+
+        timer = new Timer();
+        timer.start();
     }
 
     public void setPipeline(String limelightName, LimelightState.PIPELINE pipeline) {
@@ -234,10 +245,14 @@ public class Limelight extends SubsystemBase {
             ignoreAllLimes = false;
         }
 
-        flState.update(ignoreAllLimes);
-        frState.update(ignoreAllLimes);
-        blState.update(ignoreAllLimes, 0.75, 0.75);
-        brState.update(ignoreAllLimes);
+        flState.update(ignoreAllLimes, timer);
+        frState.update(ignoreAllLimes, timer);
+        blState.update(ignoreAllLimes, 0.75, 0.75, timer);
+        brState.update(ignoreAllLimes, timer);
+
+        if (timer.hasElapsed(5)) {
+            timer.restart();
+        }
     }
 
     /**
