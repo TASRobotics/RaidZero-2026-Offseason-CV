@@ -36,8 +36,8 @@ public class Limelight extends SubsystemBase {
         public LimelightState(String limelightName) {
             this.limelightName = limelightName;
             this.ntPublisher = NetworkTableInstance.getDefault()
-                .getStructTopic(limelightName + "NT", Pose2d.struct)
-                .publish();
+                    .getStructTopic(limelightName + "NT", Pose2d.struct)
+                    .publish();
 
             this.ignore = false;
         }
@@ -160,19 +160,24 @@ public class Limelight extends SubsystemBase {
 
         private boolean checkIgnore() {
             return !poseInField(currEstimate.pose) ||
-                (Math.abs(LimelightHelpers.getBotPose3d_wpiBlue(limelightName).getZ()) > 0.4) ||
-                (LimelightHelpers.getTA(limelightName) < 0.1) ||
-                (prevEstimate != null && (currEstimate.pose.getTranslation().getDistance(prevEstimate.pose.getTranslation()) /
-                    (currEstimate.timestampSeconds - prevEstimate.timestampSeconds)) > TunerConstants.kSpeedAt12Volts
-                        .baseUnitMagnitude()) ||
-                (prevEstimate != null && (currEstimate.pose.getTranslation()
-                    .getDistance(
-                        prevEstimate.pose
-                            .getTranslation()
-                    ) > TunerConstants.kSpeedAt12Volts.baseUnitMagnitude() * 0.02)) ||
-                (currEstimate.rawFiducials.length > 0 && currEstimate.rawFiducials[0].ambiguity > 0.5 &&
-                    currEstimate.rawFiducials[0].distToCamera > 4.0) ||
-                currEstimate.pose.equals(new Pose2d(0, 0, Rotation2d.fromDegrees(0)));
+                    (Math.abs(LimelightHelpers.getBotPose3d_wpiBlue(limelightName).getZ()) > 0.4) ||
+                    (LimelightHelpers.getTA(limelightName) < 0.1) ||
+                    (prevEstimate != null
+                            && (currEstimate.pose.getTranslation().getDistance(prevEstimate.pose.getTranslation()) /
+                                    (currEstimate.timestampSeconds
+                                            - prevEstimate.timestampSeconds)) > TunerConstants.kSpeedAt12Volts
+                                                    .baseUnitMagnitude())
+                    ||
+                    (prevEstimate != null && (currEstimate.pose.getTranslation()
+                            .getDistance(
+                                    prevEstimate.pose
+                                            .getTranslation()) > TunerConstants.kSpeedAt12Volts.baseUnitMagnitude()
+                                                    * 0.02))
+                    ||
+                    (currEstimate.rawFiducials.length > 0 && currEstimate.rawFiducials[0].ambiguity > 0.5 &&
+                            currEstimate.rawFiducials[0].distToCamera > 4.0)
+                    ||
+                    currEstimate.pose.equals(new Pose2d(0, 0, Rotation2d.fromDegrees(0)));
         }
 
         /**
@@ -183,9 +188,9 @@ public class Limelight extends SubsystemBase {
          */
         private boolean poseInField(Pose2d pose) {
             return pose.getTranslation().getX() > 0 &&
-                pose.getTranslation().getX() < 17.55 &&
-                pose.getTranslation().getY() > 0 &&
-                pose.getTranslation().getY() < 8.05;
+                    pose.getTranslation().getX() < 17.55 &&
+                    pose.getTranslation().getY() > 0 &&
+                    pose.getTranslation().getY() < 8.05;
         }
     }
 
@@ -195,11 +200,10 @@ public class Limelight extends SubsystemBase {
     private LimelightState brState = new LimelightState("limelight-br");
 
     private Map<String, LimelightState> limelights = Map.of(
-        "limelight-fl", flState,
-        "limelight-fr", frState,
-        "limelight-bl", blState,
-        "limelight-br", brState
-    );
+            "limelight-fl", flState,
+            "limelight-fr", frState,
+            "limelight-bl", blState,
+            "limelight-br", brState);
 
     private boolean ignoreAllLimes = false;
 
