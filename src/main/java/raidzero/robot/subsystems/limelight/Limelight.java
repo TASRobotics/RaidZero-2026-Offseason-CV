@@ -84,8 +84,8 @@ public class Limelight extends SubsystemBase {
          *
          * @param ignoreAll Whether to ignore all measurements
          */
-        public void update(boolean ignoreAll, Timer timer) {
-            update(ignoreAll, 0.5, 0.5, Units.degreesToRadians(5), timer);
+        public void update(boolean ignoreAll) {
+            update(ignoreAll, 0.5, 0.5, Units.degreesToRadians(5));
         }
 
         /**
@@ -95,8 +95,8 @@ public class Limelight extends SubsystemBase {
          * @param stdevX    The standard deviation in the X direction in meters
          * @param stdevY    The standard deviation in the Y direction in meters
          */
-        public void update(boolean ignoreAll, double stdevX, double stdevY, Timer timer) {
-            update(ignoreAll, stdevX, stdevY, Units.degreesToRadians(5), timer);
+        public void update(boolean ignoreAll, double stdevX, double stdevY) {
+            update(ignoreAll, stdevX, stdevY, Units.degreesToRadians(5));
         }
 
         /**
@@ -105,8 +105,8 @@ public class Limelight extends SubsystemBase {
          * @param ignoreAll Whether to ignore all measurements
          * @param stdevRot  The standard deviation for rotations in radians
          */
-        public void update(boolean ignoreAll, double stdevRot, Timer timer) {
-            update(ignoreAll, 0.5, 0.5, stdevRot, timer);
+        public void update(boolean ignoreAll, double stdevRot) {
+            update(ignoreAll, 0.5, 0.5, stdevRot);
         }
 
         /**
@@ -117,7 +117,7 @@ public class Limelight extends SubsystemBase {
          * @param stdevY    The standard deviation in the Y direction in meters
          * @param stdevRot  The standard deviation for rotations in radians
          */
-        public void update(boolean ignoreAll, double stdevX, double stdevY, double stdevRot, Timer timer) {
+        public void update(boolean ignoreAll, double stdevX, double stdevY, double stdevRot) {
             LimelightHelpers.SetRobotOrientation(
                     limelightName,
                     swerve.getPigeon2().getYaw().getValueAsDouble(),
@@ -249,10 +249,10 @@ public class Limelight extends SubsystemBase {
             ignoreAllLimes = false;
         }
 
-        flState.update(ignoreAllLimes, timer);
-        frState.update(ignoreAllLimes, timer);
-        blState.update(ignoreAllLimes, 0.75, 0.75, timer);
-        brState.update(ignoreAllLimes, timer);
+        flState.update(ignoreAllLimes);
+        frState.update(ignoreAllLimes);
+        blState.update(ignoreAllLimes, 0.75, 0.75);
+        brState.update(ignoreAllLimes);
 
         if (timer.hasElapsed(5)) {
             timer.restart();
