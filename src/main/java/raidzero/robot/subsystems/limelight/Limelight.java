@@ -10,6 +10,8 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+import java.util.ArrayList;
 import java.util.Map;
 import raidzero.lib.LimelightHelpers;
 import raidzero.robot.subsystems.swerve.Swerve;
@@ -145,8 +147,8 @@ public class Limelight extends SubsystemBase {
                             VecBuilder.fill(stdevX, stdevY, stdevRot)
                                     .div(Math.max(LimelightHelpers.getTA(limelightName), 0.05)));
 
-                    if (timer.hasElapsed(5)) {
-                        swerve.getPigeon2().setYaw(currEstimate.pose.getRotation().getDegrees());
+                    if (Timer.getFPGATimestamp() < 30 && timer.hasElapsed(1)) {
+                        headingReadings.add(currEstimate.pose.getRotation().getDegrees());
                     }
                 }
 
@@ -210,6 +212,9 @@ public class Limelight extends SubsystemBase {
     private Notifier notifier;
     private Timer timer;
 
+    private ArrayList<Double> headingReadings;
+    private boolean seededPigeon;
+
     private Swerve swerve = Swerve.system();
     private static Limelight instance = null;
 
@@ -218,6 +223,9 @@ public class Limelight extends SubsystemBase {
      */
     private Limelight() {
         this.startThread();
+
+        headingReadings = new ArrayList<Double>();
+        seededPigeon = false;
 
         timer = new Timer();
         timer.start();
@@ -254,8 +262,15 @@ public class Limelight extends SubsystemBase {
         blState.update(ignoreAllLimes, 0.75, 0.75);
         brState.update(ignoreAllLimes);
 
-        if (timer.hasElapsed(5)) {
+        if (!seededPigeon && timer.hasElapsed(1)) {
             timer.restart();
+        }
+
+        if (!seededPigeon && Timer.getFPGATimestamp() > 30) {
+            swerve.getPigeon2().setYaw(headingReadings.stream().mapToDouble(Double::doubleValue).average().orElse(0.0));
+            seededPigeon = true;
+            timer.stop();
+            timer.reset();
         }
     }
 
