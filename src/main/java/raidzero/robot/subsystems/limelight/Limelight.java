@@ -264,7 +264,7 @@ public class Limelight extends SubsystemBase {
             timer.restart();
         }
 
-        if (!seededPigeon && Timer.getFPGATimestamp() > 30) {
+        if (!seededPigeon && Timer.getFPGATimestamp() > 20) {
             swerve.getPigeon2().setYaw(headingReadings.stream().mapToDouble(Double::doubleValue).average().orElse(0.0));
             seededPigeon = true;
             timer.stop();
