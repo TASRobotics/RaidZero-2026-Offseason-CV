@@ -322,7 +322,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
             this.setControl(
                 request.withSpeeds(
                     new ChassisSpeeds(
-                        1.00, 0.0, LimelightHelpers.getTX("limelight-br") * -0.125
+                        -1.50, 0.0, LimelightHelpers.getTX("limelight-br") * -0.125
                     )
                 )
             );
