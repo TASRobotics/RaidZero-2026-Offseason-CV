@@ -326,8 +326,6 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
                     )
                 )
             );
-        }).onlyIf(() -> {
-            return LimelightHelpers.getDetectorClass("limelight-br").equals("coral");
         }).until(() -> {
             return LimelightHelpers.getTY("limelight-br") < -15 && LimelightHelpers.getTV("limelight-br");
         })).finallyDo(() -> {
